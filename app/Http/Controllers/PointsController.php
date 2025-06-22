@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\PointsModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PointsController extends Controller
 {
@@ -45,17 +47,21 @@ class PointsController extends Controller
         $request->validate([
             'name'        => 'required|unique:points,name',
             'description' => 'required',
+            'category'    => 'required|in:lost,found',        // tambahkan
             'geom_point'  => 'required',
             'image'       => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10240',
-        ],[
-            'name.required'        => 'Name is required',
-            'name.unique'          => 'Name already exists',
-            'description.required' => 'Description is required',
-            'geom_point.required'  => 'Geometry point is required',
+        ], [
+            'name.required'        => 'Nama wajib diisi',
+            'name.unique'          => 'Nama sudah terdaftar',
+            'description.required' => 'Deskripsi wajib diisi',
+            'category.required'    => 'Kategori harus dipilih',          // pesan baru
+            'category.in'          => 'Kategori tidak valid',
+            'geom_point.required'  => 'Titik geometri wajib diisi',
             'image.image'          => 'File harus berupa gambar',
             'image.mimes'          => 'Format gambar hanya jpeg,png,jpg,gif,svg',
-            'image.max'            => 'Ukuran gambar maksimal 10MB',
+            'image.max'            => 'Ukuran gambar maksimal 10MB',
         ]);
+
 
         // Buat folder jika belum ada
         if (!is_dir($this->imageFolder)) {
@@ -73,19 +79,27 @@ class PointsController extends Controller
 
         //memasukkan ke data
         $data = [
-            'geom'        => $request->geom_point,
+            // konversi WKT ke PostGIS geometry
+            'geom'        => DB::raw("ST_GeomFromText('{$request->geom_point}',4326)"),
+
             'name'        => $request->name,
             'description' => $request->description,
             'image'       => $name_image,
-            'user_id'     => auth()->user()->id, //auth user memanggil/mendapatkan id dari user yg login (ini di dlm store)
+            'user_id'     => auth()->user()->id,
+            'category'    => $request->category,        // kategori lost/found
+            'status'      => 'available',              // default status baru
         ];
 
-        // Membuat data
-        if (! $this->points->create($data)) {
-            return redirect()->route('map')->with('error', 'Point failed to add');
-        }
 
-        return redirect()->route('map')->with('success', 'Point has been added');
+        try {
+            $this->points->create($data);
+            return redirect()->route('map')
+                ->with('success', 'Laporan berhasil dibuat');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error membuat point: ' . $e->getMessage());
+            return redirect()->route('map')
+                ->with('error', 'Gagal membuat laporan. Silakan coba lagi.');
+        }
     }
 
     /**
@@ -118,13 +132,16 @@ class PointsController extends Controller
         $request->validate([
             'name'        => 'required|unique:points,name,' . $id,
             'description' => 'required',
+            'category'    => 'required|in:lost,found',   //penambahan kategori
             'geom_point'  => 'required',
             'image'       => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10240',
-        ],[
-            'name.required'        => 'Name is required',
-            'name.unique'          => 'Name already exists',
-            'description.required' => 'Description is required',
-            'geom_point.required'  => 'Geometry point is required',
+        ], [
+            'name.required'        => 'Nama wajib diisi',
+            'name.unique'          => 'Nama sudah terdaftar',
+            'description.required' => 'Deskripsi wajib diisi',
+            'category.required'    => 'Kategori harus dipilih',
+            'category.in'          => 'Kategori tidak valid',
+            'geom_point.required'  => 'Titik geometri wajib diisi',
             'image.image'          => 'File harus berupa gambar',
             'image.mimes'          => 'Format gambar hanya jpeg,png,jpg,gif,svg',
             'image.max'            => 'Ukuran gambar maksimal 10MB',
@@ -152,18 +169,19 @@ class PointsController extends Controller
         }
 
         $data = [
-            'geom'        => $request->geom_point,
+            'geom'        => DB::raw("ST_GeomFromText('{$request->geom_point}',4326)"),
             'name'        => $request->name,
             'description' => $request->description,
             'image'       => $name_image,
+            'category'    => $request->category,         // update kategori jika diizinkan
+            // jangan ubah status di sini, kecuali memang ingin reset
         ];
 
-        // Update data
-        if (! $this->points->find($id)->update($data)) {
-            return redirect()->route('map')->with('error', 'Point failed to update');
-        }
 
-        return redirect()->route('map')->with('success', 'Point has been updated');
+        // Update data
+        $point = $this->points->findOrFail($id);
+        $point->update($data);
+        return redirect()->route('map')->with('success', 'Laporan berhasil diperbarui');
     }
 
     /**
@@ -182,5 +200,12 @@ class PointsController extends Controller
         }
 
         return redirect()->route('map')->with('success', 'Point has been deleted');
+    }
+
+    public function claim($id)
+    {
+        $point = $this->points->findOrFail($id);
+        $point->update(['status' => 'claimed']);
+        return back()->with('success', 'Laporan telah diklaim.');
     }
 }

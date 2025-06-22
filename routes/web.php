@@ -29,6 +29,8 @@ Route::resource('polygons', PolygonsController::class);
 Route::get('/map', [PointsController::class, 'index'])->middleware(['auth', 'verified'])->name('map');
 //tabel boleh diakses umum
 Route::get('/table', [TableController::class, 'index'])->name('table');
+Route::post('points/{id}/claim', [PointsController::class,'claim'])->name('points.claim');
+
 
 
 require __DIR__ . '/auth.php';
