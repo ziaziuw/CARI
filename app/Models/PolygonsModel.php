@@ -106,5 +106,16 @@ class PolygonsModel extends Model
         'name',
         'description',
         'image',
+        'user_id',
     ];
+
+    public function claims()
+    {
+        return $this->morphMany(Claim::class, 'claimable');
+    }
+
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
 }
