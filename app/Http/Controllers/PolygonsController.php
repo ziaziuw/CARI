@@ -12,8 +12,8 @@ class PolygonsController extends Controller
 
     public function __construct()
     {
+        $this->middleware('auth');
         $this->polygons = new PolygonsModel();
-        // Tentukan folder untuk menyimpan gambar
         $this->imageFolder = public_path('storage/images');
     }
 
@@ -44,11 +44,11 @@ class PolygonsController extends Controller
             'description'  => 'required',
             'geom_polygon' => 'required',
             'image'        => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10240',
-        ],[
+        ], [
             'name.required'        => 'Name is required',
             'name.unique'          => 'Name already exist',
             'description.required' => 'Description is required',
-            'geom_polygon.required'=> 'Geometry is required',
+            'geom_polygon.required' => 'Geometry is required',
             'image.image'          => 'File harus berupa gambar',
             'image.mimes'          => 'Format gambar hanya jpeg,png,jpg,gif,svg',
             'image.max'            => 'Ukuran gambar maksimal 10MB',
@@ -102,11 +102,11 @@ class PolygonsController extends Controller
             'description'  => 'required',
             'geom_polygon' => 'required',
             'image'        => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10240',
-        ],[
+        ], [
             'name.required'        => 'Name is required',
             'name.unique'          => 'Name already exists',
             'description.required' => 'Description is required',
-            'geom_polygon.required'=> 'Geometry polygon is required',
+            'geom_polygon.required' => 'Geometry polygon is required',
             'image.image'          => 'File harus berupa gambar',
             'image.mimes'          => 'Format gambar hanya jpeg,png,jpg,gif,svg',
             'image.max'            => 'Ukuran gambar maksimal 10MB',

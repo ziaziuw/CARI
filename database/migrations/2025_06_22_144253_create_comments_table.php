@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('polygons', function (Blueprint $table) {
+        Schema::create('comments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->geometry('geom');
-            $table->string('name');
-            $table->text('description');
-            $table->string('image')->nullable();
+            $table->unsignedBigInteger('commentable_id');
+            $table->string('commentable_type');
+            $table->foreignId('user_id')->constrained(); // siapa yang komen
+            $table->foreignId('parent_id')->nullable()->constrained('comments');
+            $table->text('content');
             $table->timestamps();
         });
     }
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('polygons');
+        Schema::dropIfExists('comments');
     }
 };

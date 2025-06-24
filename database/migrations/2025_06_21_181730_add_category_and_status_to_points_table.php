@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Schema::table('polygons', function (Blueprint $table) {
-        //     $table->string('photo')->nullable();
-        // });
+        Schema::table('points', function (Blueprint $table) {
+            $table->string('category')->default('lost')->after('geom');
+            $table->string('status')->default('available')->after('category');
+        });
     }
 
     /**
@@ -21,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('points', function (Blueprint $table) {
+            //
+        });
     }
 };

@@ -4,11 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use App\Models\Claim;
+use App\Models\Comment;
 
 class PolylinesModel extends Model
 {
     protected $table = 'polylines';
     protected $guarded = ['id'];
+
+    protected $fillable = [
+        'geom',
+        'name',
+        'description',
+        'image',
+    ];
 
     /**
      * Fetch polylines and return GeoJSON FeatureCollection.
@@ -47,7 +56,7 @@ class PolylinesModel extends Model
                         'length_km'   => $polyline->length_km,
                         'created_at'  => $polyline->created_at,
                         'updated_at'  => $polyline->updated_at,
-                        'user_id' => $polyline->user_id,
+                        'user_id'     => $polyline->user_id,
                         'user_created' => $polyline->user_created,
                     ],
                 ];
@@ -93,10 +102,13 @@ class PolylinesModel extends Model
         ];
     }
 
-    protected $fillable = [
-        'geom',
-        'name',
-        'description',
-        'image',
-    ];
+    public function claims()
+    {
+        return $this->morphMany(Claim::class, 'claimable');
+    }
+
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
 }
